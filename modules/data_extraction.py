@@ -60,7 +60,6 @@ def extract_linkedin_profile(
         logger.info(f"[Step 1/2] Generating snapshot ID for profile: {username}")
         
         apify_base_url = "https://api.apify.com/v2"
-        headers = {"Authorization": f"Bearer {apify_api_token}"}
         
         # Step 1 input: generate_snap_id action
         step1_input = {
@@ -68,12 +67,14 @@ def extract_linkedin_profile(
             "urls": linkedin_profile_url  # Single URL as string
         }
         
-        step1_url = f"{apify_base_url}/actors/zerobreak~linkedin-profile-scrapper/run-sync-get-dataset-items"
+        # Correct endpoint: /acts/ not /actors/
+        # Token is passed as query parameter, not header
+        step1_url = f"{apify_base_url}/acts/zerobreak~linkedin-profile-scrapper/run-sync-get-dataset-items"
         
         response = requests.post(
             step1_url,
             json=step1_input,
-            headers=headers,
+            params={"token": apify_api_token},
             timeout=60
         )
         
@@ -119,7 +120,7 @@ def extract_linkedin_profile(
         response = requests.post(
             step1_url,  # Same endpoint, different action
             json=step2_input,
-            headers=headers,
+            params={"token": apify_api_token},
             timeout=60
         )
         
