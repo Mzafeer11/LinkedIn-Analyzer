@@ -15,7 +15,7 @@ def extract_linkedin_profile(
     api_key: Optional[str] = None, 
     mock: bool = False
 ) -> Dict[str, Any]:
-    """Extract LinkedIn profile data using Apify Actor or loads a premade JSON file.
+    """Extract LinkedIn profile data using zerobreak/linkedin-profile-scrapper actor or mock data.
     
     Args:
         linkedin_profile_url: The LinkedIn profile URL to extract data from.
@@ -42,28 +42,26 @@ def extract_linkedin_profile(
             
             username = linkedin_profile_url.split("linkedin.com/in/")[-1].strip("/")
             
-            # Use Apify's free LinkedIn Profile Scraper actor
-            # Actor ID: apify/linkedin-profile-scraper
+            # Use zerobreak/linkedin-profile-scrapper actor (free tier available)
+            # Actor ID: zerobreak/linkedin-profile-scrapper
             apify_api_token = api_key or os.getenv("APIFY_API_TOKEN", "")
             apify_base_url = "https://api.apify.com/v2"
             
-            # Prepare actor input
+            # Prepare actor input for zerobreak/linkedin-profile-scrapper
+            # This actor expects linkedinUrls parameter
             actor_input = {
-                "profiles": [linkedin_profile_url],
-                "slowmo": 0,
-                "maxRequests": 1
+                "linkedinUrls": [linkedin_profile_url]
             }
             
-            logger.info(f"Sending request to Apify for profile: {username}")
+            logger.info(f"Sending request to Apify (zerobreak actor) for profile: {username}")
             
-            # Call Apify actor (free tier available)
+            # Call Apify actor with authentication
             if apify_api_token:
                 # Authenticated call using the correct actor endpoint
                 headers = {"Authorization": f"Bearer {apify_api_token}"}
                 
-                # The correct endpoint format for calling an actor directly
-                # First, call the actor and wait for completion
-                actor_call_url = f"{apify_base_url}/actors/apify~linkedin-profile-scraper/run-sync-get-dataset-items"
+                # Endpoint format: /actors/{ownerName}~{actorName}/run-sync-get-dataset-items
+                actor_call_url = f"{apify_base_url}/actors/zerobreak~linkedin-profile-scrapper/run-sync-get-dataset-items"
                 
                 response = requests.post(
                     actor_call_url,
