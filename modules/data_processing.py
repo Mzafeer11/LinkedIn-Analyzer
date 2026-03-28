@@ -7,7 +7,7 @@ from typing import Dict, List, Any, Optional
 from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.node_parser import SentenceSplitter
 
-from modules.llm_interface import create_watsonx_embedding
+from modules.llm_interface import create_github_embedding
 import config
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def create_vector_database(nodes: List) -> Optional[VectorStoreIndex]:
     """
     try:
         # Get the embedding model
-        embedding_model = create_watsonx_embedding()
+        embedding_model = create_github_embedding()
 
         # Create a VectorStoreIndex from the nodes
         index = VectorStoreIndex(

@@ -1,15 +1,16 @@
 """Configuration settings for the Icebreaker Bot."""
 
-# IBM watsonx.ai settings
-WATSONX_URL = "https://us-south.ml.cloud.ibm.com"
-WATSONX_PROJECT_ID = "skills-network"
+import os
+
+# GitHub Models (OpenAI-compatible endpoint)
+GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 
 # Model settings
-LLM_MODEL_ID = "ibm/granite-3-2-8b-instruct"
-EMBEDDING_MODEL_ID = "ibm/slate-125m-english-rtrvr-v2"
+LLM_MODEL_ID = "gpt-4o-mini"
+EMBEDDING_MODEL_ID = "text-embedding-3-small"
 
 # ProxyCurl API settings
-PROXYCURL_API_KEY = ""  # Replace with your API key
+PROXYCURL_API_KEY = os.getenv("PROXYCURL_API_KEY", "")
 
 # Mock data URL
 MOCK_DATA_URL = "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/ZRe59Y_NJyn3hZgnF1iFYA/linkedin-profile-data.json"

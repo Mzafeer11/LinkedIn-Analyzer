@@ -1,11 +1,9 @@
 llama-index-core==0.11.8
-llama-index-llms-ibm==0.2.0
-llama-index-embeddings-ibm==0.2.0
+llama-index-llms-openai==0.2.9
+llama-index-embeddings-openai==0.2.5
 llama-index-readers-web==0.2.2
-llama-hub==0.0.79.post1
 requests==2.32.2
-pydantic==2.10.6
+openai==1.64.0
 
-# FIXED VERSIONS
-gradio==4.19.2
-huggingface_hub==0.20.3
+# Kaggle/Python 3.12 compatible UI stack
+gradio==4.44.1

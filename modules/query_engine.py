@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from llama_index.core import VectorStoreIndex, PromptTemplate
 
-from modules.llm_interface import create_watsonx_llm
+from modules.llm_interface import create_github_llm, explain_model_error
 import config
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def generate_initial_facts(index: VectorStoreIndex) -> str:
     """
     try:
         # Create LLM for generating facts
-        watsonx_llm = create_watsonx_llm(
+        llm_client = create_github_llm(
             temperature=0.0,
             max_new_tokens=500,
             decoding_method="sample"
@@ -34,7 +34,7 @@ def generate_initial_facts(index: VectorStoreIndex) -> str:
         query_engine = index.as_query_engine(
             streaming=False,
             similarity_top_k=config.SIMILARITY_TOP_K,
-            llm=watsonx_llm,
+            llm=llm_client,
             text_qa_template=facts_prompt
         )
         
@@ -46,7 +46,7 @@ def generate_initial_facts(index: VectorStoreIndex) -> str:
         return response.response
     except Exception as e:
         logger.error(f"Error in generate_initial_facts: {e}")
-        return "Failed to generate initial facts."
+        return f"Failed to generate initial facts. {explain_model_error(e)}"
 
 def answer_user_query(index: VectorStoreIndex, user_query: str) -> Any:
     """Answers the user's question using the vector database and the LLM.
@@ -60,7 +60,7 @@ def answer_user_query(index: VectorStoreIndex, user_query: str) -> Any:
     """
     try:
         # Create LLM for answering questions
-        watsonx_llm = create_watsonx_llm(
+        llm_client = create_github_llm(
             temperature=0.0,
             max_new_tokens=250,
             decoding_method="greedy"
@@ -80,7 +80,7 @@ def answer_user_query(index: VectorStoreIndex, user_query: str) -> Any:
         query_engine = index.as_query_engine(
             streaming=False,
             similarity_top_k=config.SIMILARITY_TOP_K,
-            llm=watsonx_llm,
+            llm=llm_client,
             text_qa_template=question_prompt
         )
         
@@ -89,4 +89,4 @@ def answer_user_query(index: VectorStoreIndex, user_query: str) -> Any:
         return answer
     except Exception as e:
         logger.error(f"Error in answer_user_query: {e}")
-        return "Failed to get an answer."
+        return f"Failed to get an answer. {explain_model_error(e)}"

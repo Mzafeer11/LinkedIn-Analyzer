@@ -9,6 +9,7 @@ from modules.data_extraction import extract_linkedin_profile
 from modules.data_processing import split_profile_data, create_vector_database, verify_embeddings
 from modules.query_engine import generate_initial_facts, answer_user_query
 from typing import Dict, Any, Optional
+import config
 
 # Set up logging
 logging.basicConfig(
@@ -85,7 +86,8 @@ def chatbot_interface(index):
         print('\r', end='')
         
         response = answer_user_query(index, user_query)
-        print(f"Bot: {response.response.strip()}\n")
+        bot_reply = response.response.strip() if hasattr(response, "response") else str(response)
+        print(f"Bot: {bot_reply}\n")
 
 def main():
     """Main function to run the Icebreaker Bot."""
@@ -93,7 +95,7 @@ def main():
     parser.add_argument('--url', type=str, help='LinkedIn profile URL')
     parser.add_argument('--api-key', type=str, help='ProxyCurl API key')
     parser.add_argument('--mock', action='store_true', help='Use mock data instead of API')
-    parser.add_argument('--model', type=str, help='LLM model to use (e.g., "ibm/granite-3-2-8b-instruct")')
+    parser.add_argument('--model', type=str, help='LLM model to use (e.g., "gpt-4o-mini")')
     
     args = parser.parse_args()
     
