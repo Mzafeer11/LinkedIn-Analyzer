@@ -58,18 +58,25 @@ def extract_linkedin_profile(
             
             # Call Apify actor (free tier available)
             if apify_api_token:
-                # Authenticated call
+                # Authenticated call using the correct actor endpoint
                 headers = {"Authorization": f"Bearer {apify_api_token}"}
-                task_url = f"{apify_base_url}/actor-tasks/apify~linkedin-profile-scraper/run-sync-get-dataset-items"
+                
+                # The correct endpoint format for calling an actor directly
+                # First, call the actor and wait for completion
+                actor_call_url = f"{apify_base_url}/actors/apify~linkedin-profile-scraper/run-sync-get-dataset-items"
+                
                 response = requests.post(
-                    task_url,
+                    actor_call_url,
                     json=actor_input,
                     headers=headers,
-                    timeout=60
+                    timeout=120  # LinkedIn scraping can take time
                 )
+                
+                logger.info(f"Apify API Response Status: {response.status_code}")
             else:
-                # Use free alternative: fetch profile metadata via web scraping
-                logger.info("Using web fetch (no Apify token provided). For full profile data, set APIFY_API_TOKEN.")
+                # Use free alternative: mock data
+                logger.warning("No APIFY_API_TOKEN provided. Falling back to mock data.")
+                logger.warning("To scrape real LinkedIn profiles, set APIFY_API_TOKEN environment variable.")
                 response = _fetch_profile_metadata(linkedin_profile_url)
         
         logger.info(f"Received response at {time.time() - start_time:.2f} seconds...")
@@ -100,6 +107,17 @@ def extract_linkedin_profile(
         else:
             logger.error(f"Failed to retrieve data. Status code: {response.status_code}")
             logger.error(f"Response: {response.text}")
+            logger.warning("Falling back to mock data since API call failed...")
+            
+            # Auto-fallback to mock data on API failure
+            try:
+                mock_response = requests.get(config.MOCK_DATA_URL, timeout=30)
+                if mock_response.status_code == 200:
+                    logger.info("✓ Successfully loaded mock data as fallback.")
+                    return mock_response.json()
+            except Exception as fallback_error:
+                logger.error(f"Fallback to mock data also failed: {fallback_error}")
+            
             return {}
             
     except Exception as e:

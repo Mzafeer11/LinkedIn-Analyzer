@@ -9,7 +9,7 @@ This project is my guided implementation from a course I followed to learn LLM a
 ## 🌟 Features
 
 - **LinkedIn Profile Analysis**: Extract professional data using Apify scraper or use mock data
-- **AI-Powered Insights**: Generate interesting facts about a person's career/education 
+- **AI-Powered Insights**: Generate interesting facts about a person's career/education
 - **Personalized Q&A**: Answer specific questions about the person's background
 - **Two Interfaces**: Command-line tool for quick usage and web UI for user-friendly interaction
 - **Flexible**: Use mock data for practice or connect to real LinkedIn profiles with Apify
@@ -26,6 +26,7 @@ This project is my guided implementation from a course I followed to learn LLM a
 ### Installation
 
 1. Clone your own repository:
+
 ```bash
 git clone https://github.com/Mzafeer11/LinkedIn-Analyzer.git
 cd LinkedIn-Analyzer
@@ -42,17 +43,20 @@ git push -u origin main
 ```
 
 2. Create a virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. Export required/optional environment variables:
+
 ```bash
 # Required for GitHub Models
 export GITHUB_TOKEN="your-fine-grained-token"
