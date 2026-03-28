@@ -4,6 +4,7 @@ import os
 import sys
 import logging
 import uuid
+import traceback
 import gradio as gr
 
 from modules.data_extraction import extract_linkedin_profile
@@ -26,6 +27,19 @@ logger = logging.getLogger(__name__)
 # Dictionary to store active conversations
 active_indices = {}
 
+
+def _format_ui_error(context: str, error: Exception) -> str:
+    """Create a detailed, user-visible error message for UI panels."""
+    return (
+        f"Error while {context}: {str(error)}\n\n"
+        "Troubleshooting:\n"
+        "- Ensure GITHUB_TOKEN is set and has GitHub Models permission (Models: Read).\n"
+        "- Keep 'Use Mock Data' checked if ProxyCurl API key is not configured.\n"
+        "- Verify selected model is available for your GitHub token/account.\n\n"
+        "Technical details:\n"
+        f"{traceback.format_exc()}"
+    )
+
 def process_profile(linkedin_url, api_key, use_mock, selected_model):
     """Process a LinkedIn profile and generate initial facts.
     
@@ -39,6 +53,10 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
         Initial facts about the profile and a session ID for this conversation.
     """
     try:
+        # Normalize selected model to a safe value if UI/model config drift occurs.
+        if not selected_model:
+            selected_model = config.LLM_MODEL_ID
+
         # Change LLM model if needed
         if selected_model != config.LLM_MODEL_ID:
             change_llm_model(selected_model)
@@ -86,8 +104,8 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
         return f"Profile processed successfully!\n\nHere are 3 interesting facts about this person:\n\n{facts}", session_id
     
     except Exception as e:
-        logger.error(f"Error in process_profile: {e}")
-        return f"Error: {str(e)}", None
+        logger.exception("Error in process_profile")
+        return _format_ui_error("processing profile", e), None
 
 def chat_with_profile(session_id, user_query, chat_history):
     """Chat with a processed LinkedIn profile.
@@ -115,21 +133,24 @@ def chat_with_profile(session_id, user_query, chat_history):
         
         # Answer the user's query
         response = answer_user_query(index, user_query)
-        
+        bot_reply = response.response if hasattr(response, "response") else str(response)
+
         # Update chat history
-        return chat_history + [[user_query, response.response]]
+        return chat_history + [[user_query, bot_reply]]
     
     except Exception as e:
-        logger.error(f"Error in chat_with_profile: {e}")
-        return chat_history + [[user_query, f"Error: {str(e)}"]]
+        logger.exception("Error in chat_with_profile")
+        return chat_history + [[user_query, _format_ui_error("answering your question", e)]]
 
 def create_gradio_interface():
     """Create the Gradio interface for the Icebreaker Bot."""
     # Define available LLM models
     available_models = [
-        "ibm/granite-3-2-8b-instruct",
-        "meta-llama/llama-3-3-70b-instruct"
+        "gpt-4o-mini",
+        "gpt-4.1-mini",
+        "gpt-4.1",
     ]
+    default_model = config.LLM_MODEL_ID if config.LLM_MODEL_ID in available_models else available_models[0]
     
     with gr.Blocks(title="LinkedIn Icebreaker Bot") as demo:
         gr.Markdown("# LinkedIn Icebreaker Bot")
@@ -151,8 +172,8 @@ def create_gradio_interface():
                     use_mock = gr.Checkbox(label="Use Mock Data", value=True)
                     model_dropdown = gr.Dropdown(
                         choices=available_models,
-                        label="Select LLM Model",
-                        value=config.LLM_MODEL_ID
+                        label="Select GitHub Models LLM",
+                        value=default_model
                     )
                     process_btn = gr.Button("Process Profile")
                 
@@ -200,5 +221,6 @@ if __name__ == "__main__":
     demo.launch(
         server_name="127.0.0.1",  
         server_port=5000,
-        share=True  # Set to False if you don't want to create a public link
+        share=True,  # Set to False if you don't want to create a public link
+        show_error=True,
     )
