@@ -28,7 +28,7 @@ def process_linkedin(linkedin_url, api_key=None, mock=False):
 
     Args:
         linkedin_url: The LinkedIn profile URL to extract or load mock data from.
-        api_key: ProxyCurl API key. Required if mock is False.
+        api_key: Apify API token. Optional; can use free tier or mock data.
         mock: If True, loads mock data from a premade JSON file instead of using the API.
     """
     try:
@@ -93,7 +93,7 @@ def main():
     """Main function to run the Icebreaker Bot."""
     parser = argparse.ArgumentParser(description='Icebreaker Bot - LinkedIn Profile Analyzer')
     parser.add_argument('--url', type=str, help='LinkedIn profile URL')
-    parser.add_argument('--api-key', type=str, help='ProxyCurl API key')
+    parser.add_argument('--api-key', type=str, help='Apify API token (optional)')
     parser.add_argument('--mock', action='store_true', help='Use mock data instead of API')
     parser.add_argument('--model', type=str, help='LLM model to use (e.g., "gpt-4o-mini")')
     

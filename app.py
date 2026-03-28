@@ -164,10 +164,10 @@ def create_gradio_interface():
                         placeholder="https://www.linkedin.com/in/username/"
                     )
                     api_key = gr.Textbox(
-                        label="ProxyCurl API Key (Leave empty to use mock data)",
-                        placeholder="Your ProxyCurl API Key",
+                        label="Apify API Token (Leave empty to use mock data)",
+                        placeholder="Optional: Your Apify API token",
                         type="password",
-                        value=config.PROXYCURL_API_KEY
+                        value=""
                     )
                     use_mock = gr.Checkbox(label="Use Mock Data", value=True)
                     model_dropdown = gr.Dropdown(

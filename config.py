@@ -9,8 +9,9 @@ GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
 LLM_MODEL_ID = "gpt-4o-mini"
 EMBEDDING_MODEL_ID = "text-embedding-3-small"
 
-# ProxyCurl API settings
-PROXYCURL_API_KEY = os.getenv("PROXYCURL_API_KEY", "")
+# Apify settings for LinkedIn profile extraction
+# Get free token at: https://apify.com
+APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN", "")  # Optional; free tier works without it
 
 # Mock data URL
 MOCK_DATA_URL = "https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/ZRe59Y_NJyn3hZgnF1iFYA/linkedin-profile-data.json"

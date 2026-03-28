@@ -8,11 +8,11 @@ This project is my guided implementation from a course I followed to learn LLM a
 
 ## 🌟 Features
 
-- **LinkedIn Profile Analysis**: Extract professional data using ProxyCurl API or use mock data
+- **LinkedIn Profile Analysis**: Extract professional data using Apify scraper or use mock data
 - **AI-Powered Insights**: Generate interesting facts about a person's career/education 
 - **Personalized Q&A**: Answer specific questions about the person's background
 - **Two Interfaces**: Command-line tool for quick usage and web UI for user-friendly interaction
-- **Flexible**: Use mock data for practice or connect to real LinkedIn profiles
+- **Flexible**: Use mock data for practice or connect to real LinkedIn profiles with Apify
 
 ## 🚀 Quick Start
 
@@ -20,7 +20,8 @@ This project is my guided implementation from a course I followed to learn LLM a
 
 - Python 3.11+, < 3.13
 - A GitHub fine-grained token with GitHub Models access (`Models: Read`), exported as `GITHUB_TOKEN`
-- A ProxyCurl API key (optional - mock data available)
+- An Apify API token (optional - mock data available for free testing)
+  - Get free token at: https://apify.com/
 
 ### Installation
 
@@ -56,8 +57,9 @@ pip install -r requirements.txt
 # Required for GitHub Models
 export GITHUB_TOKEN="your-fine-grained-token"
 
-# Optional (only for real LinkedIn profile extraction)
-export PROXYCURL_API_KEY="your-api-key-here"
+# Optional (only for real LinkedIn profile extraction with Apify)
+# Get free token at: https://apify.com
+export APIFY_API_TOKEN="your-apify-token-here"
 ```
 
 ### Using the Command Line Interface
