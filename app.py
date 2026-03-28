@@ -73,19 +73,19 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
         )
         
         if not profile_data:
-            return "Failed to retrieve profile data. Please check the URL or API key.", None
+            return "Failed to retrieve profile data. Please check the URL or API key.", ""
         
         # Split data into nodes
         nodes = split_profile_data(profile_data)
         
         if not nodes:
-            return "Failed to process profile data into nodes.", None
+            return "Failed to process profile data into nodes.", ""
         
         # Create vector database
         index = create_vector_database(nodes)
         
         if not index:
-            return "Failed to create vector database.", None
+            return "Failed to create vector database.", ""
         
         # Verify embeddings
         if not verify_embeddings(index):
@@ -105,7 +105,7 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
     
     except Exception as e:
         logger.exception("Error in process_profile")
-        return _format_ui_error("processing profile", e), None
+        return _format_ui_error("processing profile", e), ""
 
 def chat_with_profile(session_id, user_query, chat_history):
     """Chat with a processed LinkedIn profile.
@@ -179,7 +179,7 @@ def create_gradio_interface():
                 
                 with gr.Column():
                     result_text = gr.Textbox(label="Initial Facts", lines=10)
-                    session_id = gr.Textbox(label="Session ID", visible=False)
+                    session_id = gr.State(value="")
             
             process_btn.click(
                 fn=process_profile,
