@@ -1,6 +1,10 @@
 # LinkedIn Icebreaker Bot
 
-An AI-powered assistant that generates personalized icebreakers and conversation starters based on LinkedIn profiles. Built with IBM watsonx.ai and LlamaIndex, it helps make professional introductions more personal and engaging.
+An AI-powered assistant that generates personalized icebreakers and conversation starters based on LinkedIn profiles. Built with GitHub Models (OpenAI-compatible) and LlamaIndex, it helps make professional introductions more personal and engaging.
+
+## Course Note
+
+This project is my guided implementation from a course I followed to learn LLM application development and RAG workflows. The base workflow and core structure came from course instructions, and I customized/integrated parts while implementing it myself.
 
 ## 🌟 Features
 
@@ -15,14 +19,25 @@ An AI-powered assistant that generates personalized icebreakers and conversation
 ### Prerequisites
 
 - Python 3.11+, < 3.13
+- A GitHub fine-grained token with GitHub Models access (`Models: Read`), exported as `GITHUB_TOKEN`
 - A ProxyCurl API key (optional - mock data available)
 
 ### Installation
 
-1. Clone the repository:
+1. Clone your own repository:
 ```bash
-git clone https://github.com/HaileyTQuach/icebreaker.git
-cd icebreaker
+git clone https://github.com/Mzafeer11/LinkedIn-Analyzer.git
+cd LinkedIn-Analyzer
+```
+
+If you are starting from this codebase and want to publish your own copy first:
+
+```bash
+git clone https://github.com/HaileyTQuach/icebreaker.git icebreaker-mine
+cd icebreaker-mine
+git remote rename origin upstream
+git remote add origin https://github.com/Mzafeer11/LinkedIn-Analyzer.git
+git push -u origin main
 ```
 
 2. Create a virtual environment:
@@ -36,9 +51,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. (Optional) Add your ProxyCurl API key to `config.py`:
-```python
-PROXYCURL_API_KEY = "your-api-key-here"
+4. Export required/optional environment variables:
+```bash
+# Required for GitHub Models
+export GITHUB_TOKEN="your-fine-grained-token"
+
+# Optional (only for real LinkedIn profile extraction)
+export PROXYCURL_API_KEY="your-api-key-here"
 ```
 
 ### Using the Command Line Interface
@@ -69,9 +88,9 @@ The Icebreaker Bot uses a Retrieval-Augmented Generation (RAG) pipeline:
 
 1. **Data Extraction**: LinkedIn profile data is retrieved via ProxyCurl API or mock data
 2. **Text Processing**: Profile data is split into manageable chunks
-3. **Vector Embedding**: Text chunks are converted to vector embeddings using IBM watsonx
+3. **Vector Embedding**: Text chunks are converted to vector embeddings using GitHub Models
 4. **Storage**: Embeddings are stored in a vector database
-5. **Query & Generation**: When asked a question, relevant profile sections are retrieved and an IBM watsonx LLM generates contextually accurate responses
+5. **Query & Generation**: When asked a question, relevant profile sections are retrieved and a GitHub Models LLM generates contextually accurate responses
 
 ## 🛠️ Project Structure
 
@@ -106,7 +125,7 @@ Here are some example questions you can ask:
 You can switch between available models:
 
 ```bash
-python main.py --mock --model "meta-llama/llama-3-3-70b-instruct"
+python main.py --mock --model "gpt-4.1-mini"
 ```
 
 Or in the web interface, select from the dropdown menu.
@@ -152,7 +171,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- IBM watsonx.ai for providing the LLM and embedding models
+- GitHub Models for providing OpenAI-compatible LLM and embedding endpoints
 - LlamaIndex for the data indexing and retrieval framework
 - ProxyCurl for LinkedIn profile data extraction
 - Eden Marco for the original tutorial inspiration
