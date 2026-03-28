@@ -215,12 +215,29 @@ def create_gradio_interface():
 if __name__ == "__main__":
     demo = create_gradio_interface()
     # Launch the Gradio interface
-    # You can customize these parameters:
-    # - share=True creates a public link you can share with others
-    # - server_name and server_port set where the app runs
-    demo.launch(
-        server_name="127.0.0.1",  
-        server_port=5000,
-        share=True,  # Set to False if you don't want to create a public link
-        show_error=True,
-    )
+    # For Kaggle: uses queue=True and allows all IPs for Kaggle output reachability
+    # For local: share=False by default (use share=True only if tunnel is needed)
+    
+    is_kaggle = os.path.exists("/kaggle")
+    share_link = is_kaggle  # Kaggle often needs share=True for output visibility
+    
+    print("\n" + "="*60)
+    if is_kaggle:
+        print("Running on Kaggle - configuring for notebook environment...")
+        demo.launch(
+            server_name="0.0.0.0",  
+            server_port=7860,
+            share=share_link,
+            show_error=True,
+            quiet=False
+        )
+    else:
+        print("Running locally - app available at http://127.0.0.1:5000")
+        demo.launch(
+            server_name="127.0.0.1",  
+            server_port=5000,
+            share=share_link,
+            show_error=True,
+            quiet=False
+        )
+    print("="*60)
