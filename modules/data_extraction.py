@@ -5,7 +5,6 @@ import requests
 import logging
 from typing import Dict, Optional, Any
 import os
-import json
 
 import config
 
@@ -80,8 +79,8 @@ def extract_linkedin_profile(
         
         logger.info(f"Step 1 Response Status: {response.status_code}")
         
-        if response.status_code != 200:
-            logger.error(f"Step 1 failed: {response.text}")
+        if not 200 <= response.status_code < 300:
+            logger.error(f"Step 1 failed (status={response.status_code}): {response.text}")
             logger.warning("Falling back to mock data...")
             mock_url = config.MOCK_DATA_URL
             mock_response = requests.get(mock_url, timeout=30)
@@ -126,7 +125,7 @@ def extract_linkedin_profile(
         
         logger.info(f"Step 2 Response Status: {response.status_code}")
         
-        if response.status_code == 200:
+        if 200 <= response.status_code < 300:
             data = response.json()
             
             # Handle list response
@@ -144,7 +143,7 @@ def extract_linkedin_profile(
             logger.info(f"✓ Successfully extracted profile data in {time.time() - start_time:.2f}s")
             return data
         else:
-            logger.error(f"Step 2 failed: {response.text}")
+            logger.error(f"Step 2 failed (status={response.status_code}): {response.text}")
             logger.warning("Falling back to mock data...")
             mock_url = config.MOCK_DATA_URL
             mock_response = requests.get(mock_url, timeout=30)
