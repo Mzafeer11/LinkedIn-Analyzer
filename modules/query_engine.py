@@ -42,8 +42,17 @@ def generate_initial_facts(index: VectorStoreIndex) -> str:
         query = "Provide three interesting facts about this person's career or education."
         response = query_engine.query(query)
         
-        # Return the facts
-        return response.response
+        # Format facts with markdown for pretty display
+        facts_text = response.response.strip()
+        
+        # If facts are numbered, keep them; otherwise format as bullet points
+        if not any(line.strip().startswith(str(i)) for i in range(1, 5) for line in facts_text.split('\n')):
+            # Not numbered, let's format nicely
+            formatted = facts_text
+        else:
+            formatted = facts_text
+        
+        return f"📌 **Career & Education Insights:**\n\n{formatted}"
     except Exception as e:
         logger.error(f"Error in generate_initial_facts: {e}")
         return f"Failed to generate initial facts. {explain_model_error(e)}"
@@ -86,7 +95,17 @@ def answer_user_query(index: VectorStoreIndex, user_query: str) -> Any:
         
         # Execute the query
         answer = query_engine.query(user_query)
-        return answer
+        
+        # Format answer with markdown
+        answer_text = answer.response.strip() if hasattr(answer, 'response') else str(answer)
+        formatted_answer = f"💡 **Response:**\n\n{answer_text}"
+        
+        # Return formatted response
+        class FormattedResponse:
+            def __init__(self, text):
+                self.response = formatted_answer
+        
+        return FormattedResponse(formatted_answer)
     except Exception as e:
         logger.error(f"Error in answer_user_query: {e}")
         return f"Failed to get an answer. {explain_model_error(e)}"

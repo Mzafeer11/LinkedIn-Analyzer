@@ -45,7 +45,7 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
     
     Args:
         linkedin_url: LinkedIn profile URL to process.
-        api_key: ProxyCurl API key.
+        api_key: Apify API token (optional).
         use_mock: Whether to use mock data.
         selected_model: LLM model to use.
         
@@ -60,6 +60,10 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
         # Change LLM model if needed
         if selected_model != config.LLM_MODEL_ID:
             change_llm_model(selected_model)
+            
+        # Use environment token if not provided in UI
+        if not api_key:
+            api_key = os.getenv("APIFY_API_TOKEN", None)
             
         # Use a default URL for mock data if none provided
         if use_mock and not linkedin_url:
@@ -100,8 +104,11 @@ def process_profile(linkedin_url, api_key, use_mock, selected_model):
         # Store the index for this session
         active_indices[session_id] = index
         
-        # Return the facts and session ID
-        return f"Profile processed successfully!\n\nHere are 3 interesting facts about this person:\n\n{facts}", session_id
+        # Format facts with markdown for pretty display
+        formatted_facts = f"""# ✅ Profile Processed Successfully\n\n## 🔍 Interesting Facts\n\n{facts}"""
+        
+        # Return the formatted facts and session ID
+        return formatted_facts, session_id
     
     except Exception as e:
         logger.exception("Error in process_profile")
@@ -163,11 +170,14 @@ def create_gradio_interface():
                         label="LinkedIn Profile URL",
                         placeholder="https://www.linkedin.com/in/username/"
                     )
+                    # Pre-populate Apify token from environment if available
+                    apify_token_env = os.getenv("APIFY_API_TOKEN", "")
                     api_key = gr.Textbox(
-                        label="Apify API Token (Leave empty to use mock data)",
-                        placeholder="Optional: Your Apify API token",
+                        label="Apify API Token (Optional - auto-loads from env if set)",
+                        placeholder="Leave empty to use mock data",
                         type="password",
-                        value=""
+                        value=apify_token_env,
+                        info="If APIFY_API_TOKEN is set in environment, it's used automatically."
                     )
                     use_mock = gr.Checkbox(label="Use Mock Data", value=True)
                     model_dropdown = gr.Dropdown(
@@ -178,7 +188,7 @@ def create_gradio_interface():
                     process_btn = gr.Button("Process Profile")
                 
                 with gr.Column():
-                    result_text = gr.Textbox(label="Initial Facts", lines=10)
+                    result_text = gr.Markdown(label="Initial Facts", value="")
                     session_id = gr.State(value="")
             
             process_btn.click(
