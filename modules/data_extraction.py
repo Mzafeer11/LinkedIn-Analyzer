@@ -5,6 +5,7 @@ import requests
 import logging
 from typing import Dict, Optional, Any
 import os
+import json
 
 import config
 
@@ -15,7 +16,11 @@ def extract_linkedin_profile(
     api_key: Optional[str] = None, 
     mock: bool = False
 ) -> Dict[str, Any]:
-    """Extract LinkedIn profile data using zerobreak/linkedin-profile-scrapper actor or mock data.
+    """Extract LinkedIn profile data using zerobreak/linkedin-profile-scrapper actor (2-step process).
+    
+    This actor requires:
+    Step 1: Generate snapshot ID (starts scraping job)
+    Step 2: Fetch data after 30+ seconds (retrieves results)
     
     Args:
         linkedin_profile_url: The LinkedIn profile URL to extract data from.
@@ -32,116 +37,124 @@ def extract_linkedin_profile(
             logger.info("Using mock data from a premade JSON file...")
             mock_url = config.MOCK_DATA_URL
             response = requests.get(mock_url, timeout=30)
-        else:
-            logger.info("Starting to extract the LinkedIn profile using Apify...")
-
-            # Extract username from LinkedIn URL
-            # Formats: linkedin.com/in/username/ or linkedin.com/in/username
-            if "linkedin.com/in/" not in linkedin_profile_url:
-                raise ValueError(f"Invalid LinkedIn URL: {linkedin_profile_url}. Must contain 'linkedin.com/in/'")
-            
-            username = linkedin_profile_url.split("linkedin.com/in/")[-1].strip("/")
-            
-            # Use zerobreak/linkedin-profile-scrapper actor (free tier available)
-            # Actor ID: zerobreak/linkedin-profile-scrapper
-            apify_api_token = api_key or os.getenv("APIFY_API_TOKEN", "")
-            apify_base_url = "https://api.apify.com/v2"
-            
-            # Prepare actor input for zerobreak/linkedin-profile-scrapper
-            # This actor expects linkedinUrls parameter
-            actor_input = {
-                "linkedinUrls": [linkedin_profile_url]
-            }
-            
-            logger.info(f"Sending request to Apify (zerobreak actor) for profile: {username}")
-            
-            # Call Apify actor with authentication
-            if apify_api_token:
-                # Authenticated call using the correct actor endpoint
-                headers = {"Authorization": f"Bearer {apify_api_token}"}
-                
-                # Endpoint format: /actors/{ownerName}~{actorName}/run-sync-get-dataset-items
-                actor_call_url = f"{apify_base_url}/actors/zerobreak~linkedin-profile-scrapper/run-sync-get-dataset-items"
-                
-                response = requests.post(
-                    actor_call_url,
-                    json=actor_input,
-                    headers=headers,
-                    timeout=120  # LinkedIn scraping can take time
-                )
-                
-                logger.info(f"Apify API Response Status: {response.status_code}")
-            else:
-                # Use free alternative: mock data
-                logger.warning("No APIFY_API_TOKEN provided. Falling back to mock data.")
-                logger.warning("To scrape real LinkedIn profiles, set APIFY_API_TOKEN environment variable.")
-                response = _fetch_profile_metadata(linkedin_profile_url)
+            if response.status_code == 200:
+                return response.json()
+            return {}
         
-        logger.info(f"Received response at {time.time() - start_time:.2f} seconds...")
+        logger.info("Starting LinkedIn profile extraction (zerobreak actor, 2-step process)...")
 
-        # Check if response is successful
+        # Validate LinkedIn URL
+        if "linkedin.com/in/" not in linkedin_profile_url:
+            raise ValueError(f"Invalid LinkedIn URL: {linkedin_profile_url}. Must contain 'linkedin.com/in/'")
+        
+        username = linkedin_profile_url.split("linkedin.com/in/")[-1].strip("/")
+        apify_api_token = api_key or os.getenv("APIFY_API_TOKEN", "")
+        
+        if not apify_api_token:
+            logger.warning("No APIFY_API_TOKEN provided. Falling back to mock data.")
+            mock_url = config.MOCK_DATA_URL
+            response = requests.get(mock_url, timeout=30)
+            return response.json() if response.status_code == 200 else {}
+        
+        # ==== STEP 1: Generate Snapshot ID ====
+        logger.info(f"[Step 1/2] Generating snapshot ID for profile: {username}")
+        
+        apify_base_url = "https://api.apify.com/v2"
+        headers = {"Authorization": f"Bearer {apify_api_token}"}
+        
+        # Step 1 input: generate_snap_id action
+        step1_input = {
+            "action": "generate_snap_id",
+            "urls": linkedin_profile_url  # Single URL as string
+        }
+        
+        step1_url = f"{apify_base_url}/actors/zerobreak~linkedin-profile-scrapper/run-sync-get-dataset-items"
+        
+        response = requests.post(
+            step1_url,
+            json=step1_input,
+            headers=headers,
+            timeout=60
+        )
+        
+        logger.info(f"Step 1 Response Status: {response.status_code}")
+        
+        if response.status_code != 200:
+            logger.error(f"Step 1 failed: {response.text}")
+            logger.warning("Falling back to mock data...")
+            mock_url = config.MOCK_DATA_URL
+            mock_response = requests.get(mock_url, timeout=30)
+            return mock_response.json() if mock_response.status_code == 200 else {}
+        
+        # Extract snapshot ID from response
+        result = response.json()
+        
+        # Response might be a list or direct object
+        if isinstance(result, list) and len(result) > 0:
+            result = result[0]
+        
+        snapshot_id = result.get("snap_id") or result.get("snapshot_id")
+        
+        if not snapshot_id:
+            logger.error(f"No snapshot ID in response: {result}")
+            logger.warning("Falling back to mock data...")
+            mock_url = config.MOCK_DATA_URL
+            mock_response = requests.get(mock_url, timeout=30)
+            return mock_response.json() if mock_response.status_code == 200 else {}
+        
+        logger.info(f"✓ Snapshot ID generated: {snapshot_id}")
+        logger.info("⏳ Waiting 30 seconds for data collection...")
+        
+        # ==== WAIT 30 SECONDS ====
+        time.sleep(30)
+        
+        # ==== STEP 2: Fetch Data ====
+        logger.info(f"[Step 2/2] Fetching scraped data using snapshot ID: {snapshot_id}")
+        
+        step2_input = {
+            "action": "fetch_data",
+            "snap_id": snapshot_id
+        }
+        
+        response = requests.post(
+            step1_url,  # Same endpoint, different action
+            json=step2_input,
+            headers=headers,
+            timeout=60
+        )
+        
+        logger.info(f"Step 2 Response Status: {response.status_code}")
+        
         if response.status_code == 200:
-            try:
-                # Parse the JSON response
-                data = response.json()
-                
-                # If Apify returns a list, extract the first item
-                if isinstance(data, list) and len(data) > 0:
-                    data = data[0]
-                
-                # Clean the data, remove empty values and unwanted fields
+            data = response.json()
+            
+            # Handle list response
+            if isinstance(data, list) and len(data) > 0:
+                data = data[0]
+            
+            # Clean up empty fields
+            if isinstance(data, dict):
                 data = {
                     k: v
                     for k, v in data.items()
-                    if v not in ([], "", None) and k not in ["people_also_viewed", "certifications"]
+                    if v not in ([], "", None)
                 }
-
-                logger.info(f"Successfully extracted profile data in {time.time() - start_time:.2f}s")
-                return data
-            except ValueError as e:
-                logger.error(f"Error parsing JSON response: {e}")
-                logger.error(f"Response content: {response.text[:200]}...")  # Print first 200 chars
-                return {}
+            
+            logger.info(f"✓ Successfully extracted profile data in {time.time() - start_time:.2f}s")
+            return data
         else:
-            logger.error(f"Failed to retrieve data. Status code: {response.status_code}")
-            logger.error(f"Response: {response.text}")
-            logger.warning("Falling back to mock data since API call failed...")
-            
-            # Auto-fallback to mock data on API failure
-            try:
-                mock_response = requests.get(config.MOCK_DATA_URL, timeout=30)
-                if mock_response.status_code == 200:
-                    logger.info("✓ Successfully loaded mock data as fallback.")
-                    return mock_response.json()
-            except Exception as fallback_error:
-                logger.error(f"Fallback to mock data also failed: {fallback_error}")
-            
-            return {}
+            logger.error(f"Step 2 failed: {response.text}")
+            logger.warning("Falling back to mock data...")
+            mock_url = config.MOCK_DATA_URL
+            mock_response = requests.get(mock_url, timeout=30)
+            return mock_response.json() if mock_response.status_code == 200 else {}
             
     except Exception as e:
         logger.error(f"Error in extract_linkedin_profile: {e}")
-        return {}
-
-
-def _fetch_profile_metadata(linkedin_url: str) -> requests.Response:
-    """Fetch profile metadata as fallback when APIFY_API_TOKEN is not set.
-    
-    This is a lightweight fallback that returns mock-like data.
-    For production use, set APIFY_API_TOKEN environment variable.
-    """
-    class MockResponse:
-        def __init__(self):
-            self.status_code = 200
-            self._data = {
-                "name": "LinkedIn User",
-                "headline": "Professional",
-                "location": "Unknown",
-                "profileUrl": linkedin_url,
-                "summary": "Profile data requires Apify token. Use mock mode or set APIFY_API_TOKEN."
-            }
-        
-        def json(self):
-            return self._data
-    
-    logger.warning(f"Returning limited profile data. Set APIFY_API_TOKEN for full extraction.")
-    return MockResponse()
+        logger.warning("Falling back to mock data...")
+        try:
+            mock_url = config.MOCK_DATA_URL
+            mock_response = requests.get(mock_url, timeout=30)
+            return mock_response.json() if mock_response.status_code == 200 else {}
+        except:
+            return {}
