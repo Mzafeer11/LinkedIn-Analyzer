@@ -173,7 +173,7 @@ def create_gradio_interface():
                     # Pre-populate Apify token from environment if available
                     apify_token_env = os.getenv("APIFY_API_TOKEN", "")
                     api_key = gr.Textbox(
-                        label="Apify API Token (Optional - auto-loads from env if set)",
+                        label="Apify API Token",
                         placeholder="Leave empty to use mock data",
                         type="password",
                         value=apify_token_env,
